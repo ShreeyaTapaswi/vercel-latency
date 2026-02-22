@@ -1,0 +1,6 @@
+[
+  {"region": "emea", "latency_ms": 120, "uptime": 0.99},
+  {"region": "emea", "latency_ms": 190, "uptime": 0.98},
+  {"region": "amer", "latency_ms": 150, "uptime": 0.97},
+  {"region": "amer", "latency_ms": 210, "uptime": 0.96}
+]
