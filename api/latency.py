@@ -1,5 +1,8 @@
-import json
-from http.server import BaseHTTPRequestHandler
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+
+app = Flask(__name__)
+CORS(app)
 
 data = [
     {"region": "us-east-1", "region_group": "amer", "latency": 245},
@@ -19,45 +22,25 @@ data = [
     {"region": "me-south-1", "region_group": "emea", "latency": 380}
 ]
 
-class handler(BaseHTTPRequestHandler):
-    def _cors_headers(self):
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+@app.route('/api/latency', methods=['GET', 'POST', 'OPTIONS'])
+def latency():
+    if request.method == 'OPTIONS':
+        response = jsonify({})
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        return response, 200
 
-    def do_OPTIONS(self):
-        self.send_response(200)
-        self._cors_headers()
-        self.end_headers()
-
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header('Content-Type', 'application/json')
-        self._cors_headers()
-        self.end_headers()
-        self.wfile.write(json.dumps(data).encode())
-
-    def do_POST(self):
-        content_length = int(self.headers.get('Content-Length', 0))
-        body = self.rfile.read(content_length)
-        try:
-            payload = json.loads(body)
-        except:
-            payload = {}
-
+    if request.method == 'POST':
+        payload = request.get_json(force=True, silent=True) or {}
         regions = payload.get('regions', None)
         threshold = payload.get('threshold_ms', None)
-
         filtered = data
         if regions:
             filtered = [d for d in filtered if d['region_group'] in regions]
         if threshold is not None:
             filtered = [d for d in filtered if d['latency'] > threshold]
-
         result = [{"region": d["region"], "latency": d["latency"]} for d in filtered]
+        return jsonify(result)
 
-        self.send_response(200)
-        self.send_header('Content-Type', 'application/json')
-        self._cors_headers()
-        self.end_headers()
-        self.wfile.write(json.dumps(result).encode())
+    return jsonify(data)
