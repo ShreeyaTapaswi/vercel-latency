@@ -1,7 +1,6 @@
 import json
 from http.server import BaseHTTPRequestHandler
 
-# Telemetry data from q-vercel-latency.json
 data = [
     {"region":"us-east-1","latency":245},{"region":"us-east-2","latency":260},
     {"region":"us-west-1","latency":310},{"region":"us-west-2","latency":290},
@@ -18,7 +17,6 @@ def compute_stats():
     sorted_l = sorted(latencies)
     n = len(sorted_l)
     mean = sum(sorted_l) / n
-    # percentile helper
     def percentile(p):
         idx = (p / 100) * (n - 1)
         lower = int(idx)
@@ -32,13 +30,25 @@ def compute_stats():
     }
 
 class handler(BaseHTTPRequestHandler):
-    def do_GET(self):
+    def _send_response(self):
         stats = compute_stats()
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
         self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
         self.end_headers()
         self.wfile.write(json.dumps(stats).encode())
 
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.end_headers()
+
+    def do_GET(self):
+        self._send_response()
+
     def do_POST(self):
-        self.do_GET()
+        self._send_response()
